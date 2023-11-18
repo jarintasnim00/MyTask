@@ -19,36 +19,48 @@ class AuthController extends Controller
     return view('auth.register');
 }
 
-public function register(Request $request)
-{
+  public function register(Request $request)
+  {
+      $validatedData = $request->validate([
+          'name' => 'required|string|max:255',
+          'email' => 'required|string|email|max:255|unique:users',
+          'profile_picture' => 'required',
+          'password' => 'required|string|min:8',
+      ]);
 
-    $validatedData = $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|string|email|max:255|unique:users',
-        'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-        'password' => 'required|string|min:8',
-    ]);
-   
-    if ($request->hasFile('profile_picture')) {
-        $image = $request->file('profile_picture');
-        $filename = uniqid() . '_' . time() . '.' . $image->getClientOriginalExtension();
-        $path = $image->storeAs('image_upload', $filename);
+    if ($request->has('profile_picture')) {
+        $img = $request->profile_picture;
+        $folderPath = "image_upload/";
+
+        $image_parts = explode(";base64,", $img);
+        $image_type_aux = explode("image/", $image_parts[0]);
+    
+        if (count($image_type_aux) > 1) {
+            $image_type = $image_type_aux[1];
+            $image_base64 = base64_decode($image_parts[1]);
+            $fileName = uniqid() . '.jpeg';
+            
+            $file = $folderPath . $fileName;
+
+            Storage::put($file, $image_base64);
+        } else {
+            return redirect()->back()->with('error', 'Invalid image format');
+        }
+    } else {
+        return redirect()->back()->with('error', 'Profile picture not found');
     }
-
-    $user = User::create([
-        'name' => $validatedData['name'],
-        'email' => $validatedData['email'],
-        'profile_picture' => $path,
-        'password' => Hash::make($validatedData['password']),
-        'remember_token' => Str::random(40),
-    ]);
-
-    Mail::to($user->email)->send(new VerifyEmail($user));
-
-    return redirect('/login')->with('success', 'Registration successful. Please verify your email address.');
-  }
+      $user = User::create([
+          'name' => $validatedData['name'],
+          'email' => $validatedData['email'],
+          'profile_picture' => $file ?? null, 
+          'password' => Hash::make($validatedData['password']),
+          'remember_token' => Str::random(40),
+      ]);
   
-
+      Mail::to($user->email)->send(new VerifyEmail($user));
+  
+      return redirect('/login')->with('success', 'Registration successful. Please verify your email address.');
+  }
 public function showLoginForm()
 {
     return view('auth.login');
