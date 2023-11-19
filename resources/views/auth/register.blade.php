@@ -44,22 +44,23 @@
         <div class="text-danger">{{$message}}</div>
         @enderror
 
-          <div class="input-group mb-3">
-            <input type="button" class="form-control" data-bs-toggle="collapse" data-bs-target="#demo" value="Take a Picture">
-            <div class="input-group-append">
+        <div class="input-group mb-3">
+          <input type="button" class="form-control" data-bs-toggle="collapse" data-bs-target="#demo" value="Take Photo" onclick="toggleCamera()">
+          <div class="input-group-append">
               <div class="input-group-text">
-                <span class="fas fa-image"></span>
+                  <span class="fas fa-image"></span>
               </div>
-            </div>
-          </div> 
-          <div id="demo" class="collapse">
-            <div class="input-group mb-3">
-            <div id="my_camera"></div>
-            <input type=button class="form-control" value="Take Snapshot" name="profile_picture" onClick="take_snapshot()">
-            <input type="hidden" name="profile_picture" class="image-tag">
-        </div>
-        <div id="results">Your captured image will appear here...</div>
-       </div> 
+          </div>
+      </div>
+      
+      <div id="demo" class="collapse">
+          <div class="input-group mb-3">
+              <div id="my_camera"></div>
+              <input type="button" class="form-control btn btn-primary" value="Capture" name="profile_picture" onClick="takeSnapshot()">
+              <input type="hidden" name="profile_picture" class="image-tag">
+          </div>
+          <div id="results">Your captured image will appear here...</div>
+      </div>
           @error('profile_picture')
           <div class="text-danger">{{$message}}</div>
           @enderror
@@ -87,21 +88,48 @@
 </div>
 
 <script language="JavaScript">
-  Webcam.set({
-      width: 300,
-      height: 300,
-      image_format: 'jpeg',
-      jpeg_quality: 90
-  });
   
-  Webcam.attach( '#my_camera' );
-  
-  function take_snapshot() {
-      Webcam.snap( function(data_uri) {
-          $(".image-tag").val(data_uri);
-          document.getElementById('results').innerHTML = '<img src="'+data_uri+'"/>';
-      } );
-  }
+
+  let cameraStarted = false;
+
+function toggleCamera() {
+    if (!cameraStarted) {
+        startCamera();
+    } else {
+        stopCamera();
+    }
+}
+
+function startCamera() {
+    Webcam.set({
+        width: 300,
+        height: 300,
+        image_format: 'jpeg',
+        jpeg_quality: 90
+    });
+    
+    Webcam.attach('#my_camera');
+    cameraStarted = true;
+}
+
+function stopCamera() {
+    Webcam.reset();
+    document.getElementById('my_camera').innerHTML = '';
+    cameraStarted = false;
+}
+
+function takeSnapshot() {
+    if (cameraStarted) {
+        Webcam.snap(function (data_uri) {
+            $(".image-tag").val(data_uri);
+            document.getElementById('results').innerHTML = '<img src="' + data_uri + '"/>';
+        });
+    } else {
+        alert('Please start the camera first.');
+    }
+}
+
+
 </script>
 
 @endsection
